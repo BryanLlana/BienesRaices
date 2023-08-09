@@ -114,6 +114,42 @@ class Propiedad
     return self::$errores;
   }
 
+  //* LISTAR PROPIEDADES
+  public static function all() {
+    $query = "SELECT * FROM propiedades";
+    $resultado = self::consultarSQL($query);
+
+    return $resultado;
+  }
+
+  public static function consultarSQL($query) {
+    //* CONSULTAR LA BD
+    $resultado = self::$db->query($query);
+
+    //* ITERAR LOS RESULTADOS
+    $array = [];
+    while($registro=$resultado->fetch_assoc()) {
+      $array[] = self::crearObjeto($registro);
+    }
+
+    //* LIBERAR LA MEMORIA
+    $resultado->free();
+
+    return $array;
+  }
+
+  private static function crearObjeto($registro) {
+    $objeto = new self;
+
+    foreach ($registro as $key => $value) {
+      if (property_exists($objeto, $key)) {
+        $objeto->$key = $value;
+      }
+    }
+
+    return $objeto;
+  }
+
   //* DEFINIR LA CONEXION BD
   public static function setDB($database)
   {

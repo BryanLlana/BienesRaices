@@ -29,13 +29,14 @@ $errores = Propiedad::getErrores();
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   $propiedad = new Propiedad($_POST);
 
-  $nombre = $propiedad->getNombre();
-  $precio = $propiedad->getPrecio();
-  $descripcion = $propiedad->getDescripcion();
-  $habitaciones = $propiedad->getHabitaciones();
-  $wc = $propiedad->getWc();
-  $estacionamiento = $propiedad->getEstacionamiento();
-  $vendedorId = $propiedad->getVendedorId();
+  //* ESCAPAR Y SANITIZAR HTML
+  $nombre = htmlspecialchars($propiedad->getNombre());
+  $precio = htmlspecialchars($propiedad->getPrecio());
+  $descripcion = htmlspecialchars($propiedad->getDescripcion());
+  $habitaciones = htmlspecialchars($propiedad->getHabitaciones());
+  $wc = htmlspecialchars($propiedad->getWc());
+  $estacionamiento = htmlspecialchars($propiedad->getEstacionamiento());
+  $vendedorId = htmlspecialchars($propiedad->getVendedorId());
 
   //* GENERAR UN NOMBRE UNICO
   $nombreImagen = md5(uniqid(rand(), true)) . ".jpg";

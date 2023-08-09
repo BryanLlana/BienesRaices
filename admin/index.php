@@ -1,18 +1,14 @@
 <?php 
   require '../includes/app.php';
+  use App\Propiedad;
+
   //* VERIFICAR AUTENTICACION
   if (!estaAutenticado()) {
     header('Location: /bienesraices/login.php');
   }
 
-  //* IMPORTAR CONEXION
-  $db = conectarDB();
-
-  //* QUERY
-  $queryObtenerPropiedades = "SELECT * FROM propiedades";
-
-  //* CONSULTAR LA BD
-  $resultadoPropiedades = mysqli_query($db, $queryObtenerPropiedades);
+  //* IMPLEMENTAR UN METODO PARA OBTENER PROPIEDADES
+  $propiedades = Propiedad::all(); 
 
   //* MOSTRAR MENSAJE CONDICIONAL
   $resultado = $_GET["resultado"] ?? null;
@@ -66,16 +62,16 @@
             </tr>
           </thead>
           <tbody>
-            <?php while($propiedad = mysqli_fetch_assoc($resultadoPropiedades)) { ?>
+            <?php foreach($propiedades as $propiedad) { ?>
               <tr>
-                <td><?php echo $propiedad["id"] ?></td>
-                <td><?php echo $propiedad["nombre"] ?></td>
-                <td><img class="imagen-tabla" src="/bienesraices/imagenes/<?php echo $propiedad["imagen"] ?>" alt="Imagen <?php echo $propiedad["nombre"] ?>"></td>
-                <td>$<?php echo $propiedad["precio"] ?></td>
+                <td><?php echo $propiedad->getId() ?></td>
+                <td><?php echo $propiedad->getNombre() ?></td>
+                <td><img class="imagen-tabla" src="/bienesraices/imagenes/<?php echo $propiedad->getImagen() ?>" alt="Imagen <?php echo $propiedad->getNombre() ?>"></td>
+                <td>$<?php echo $propiedad->getPrecio() ?></td>
                 <td>
-                  <a href="/bienesraices/admin/propiedades/actualizar.php?id=<?php echo $propiedad["id"] ?>" class="btn-amarillo-block">Modificar</a>
+                  <a href="/bienesraices/admin/propiedades/actualizar.php?id=<?php echo $propiedad->getId() ?>" class="btn-amarillo-block">Modificar</a>
                   <form method="post" class="w-100">
-                    <input type="hidden" name="id" value="<?php echo $propiedad["id"] ?>">
+                    <input type="hidden" name="id" value="<?php echo $propiedad->getId() ?>">
                     <input type="submit" class="btn-rojo-block" value="Eliminar"/>
                   </form>
                 </td>

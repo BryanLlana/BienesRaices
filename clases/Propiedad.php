@@ -35,7 +35,8 @@ class Propiedad
     $this->vendedorId = $args['vendedorId'] ?? '';
   }
 
-  public function guardar() {
+  public function guardar()
+  {
     if (isset($this->id)) {
       return $this->actualizar();
     } else {
@@ -56,17 +57,30 @@ class Propiedad
     return $resultado;
   }
 
-  public function actualizar() {
+  public function actualizar()
+  {
     //* SANITIZAR DATOS
     $atributos = $this->sanitizarAtributos();
     $valores = [];
-    foreach($atributos as $key => $value) {
+    foreach ($atributos as $key => $value) {
       $valores[] = "$key='$value'";
     }
-    
+
     $camposValores = join(', ', $valores);
-    $query = "UPDATE propiedades SET $camposValores WHERE id='".self::$db->escape_string($this->id)."'";
+    $query = "UPDATE propiedades SET $camposValores WHERE id='" . self::$db->escape_string($this->id) . "'";
     $resultado = self::$db->query($query);
+    return $resultado;
+  }
+
+  public function eliminar()
+  {
+    $query = "DELETE FROM propiedades WHERE id ='" . self::$db->escape_string($this->id) . "'";
+    $resultado = self::$db->query($query);
+
+    if ($resultado) {
+      $this->borrarImagen();
+    }
+
     return $resultado;
   }
 
@@ -100,14 +114,20 @@ class Propiedad
   {
     //* ELIMINAR LA IMAGEN PREVIA
     if (isset($this->id)) {
-      $existeArchivo = file_exists(__DIR__.'/../imagenes/'.$this->imagen);
-      if ($existeArchivo) {
-        unlink(__DIR__.'/../imagenes/'.$this->imagen);
-      }
+      $this->borrarImagen();
     }
-    
+
     if ($imagen) {
       $this->imagen = $imagen;
+    }
+  }
+
+  public function borrarImagen()
+  {
+    //* ELIMINAR LA IMAGEN PREVIA
+    $existeArchivo = file_exists(__DIR__ . '/../imagenes/' . $this->imagen);
+    if ($existeArchivo) {
+      unlink(__DIR__ . '/../imagenes/' . $this->imagen);
     }
   }
 
@@ -159,7 +179,7 @@ class Propiedad
   {
     $query = "SELECT * FROM propiedades WHERE id = $id";
     $resultado = self::consultarSQL($query);
-    return array_shift($resultado); 
+    return array_shift($resultado);
   }
 
   public static function consultarSQL($query)
@@ -192,8 +212,9 @@ class Propiedad
     return $objeto;
   }
 
-  public function sincronizar($args = []) {
-    foreach($args as $key => $value) {
+  public function sincronizar($args = [])
+  {
+    foreach ($args as $key => $value) {
       if (property_exists($this, $key) && !is_null($value)) {
         $this->$key = $value;
       }

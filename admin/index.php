@@ -18,14 +18,8 @@
     $idPropiedad = filter_var($_POST['id'], FILTER_VALIDATE_INT);
 
     if ($idPropiedad) {
-      //* ELIMINAR ARCHIVO IMAGEN
-      $queryObtenerPropiedad = "SELECT imagen FROM propiedades WHERE id=$idPropiedad";
-      $resultadoPropiedad = mysqli_query($db, $queryObtenerPropiedad);
-      $propiedad = mysqli_fetch_assoc($resultadoPropiedad);
-      unlink('../imagenes/' . $propiedad['imagen']);
-
-      $queryEliminarPropiedad = "DELETE FROM propiedades WHERE id=$idPropiedad";
-      $resultadoPropiedadEliminado = mysqli_query($db, $queryEliminarPropiedad);
+      $propiedad = Propiedad::find($idPropiedad);
+      $resultadoPropiedadEliminado = $propiedad->eliminar();
 
       if ($resultadoPropiedadEliminado) {
         header ('Location: /bienesraices/admin/index.php?resultado=3');

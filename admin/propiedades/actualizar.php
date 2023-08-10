@@ -1,12 +1,13 @@
 <?php
 require '../../includes/app.php';
+
+use App\Propiedad;
+use Intervention\Image\ImageManagerStatic as Image;
+
 //* VERIFICAR AUTENTICACION
 if (!estaAutenticado()) {
   header('Location: /bienesraices/login.php');
 }
-
-//* BASE DE DATOS
-$db = conectarDB();
 
 //* SANITIZAR Y VALIDAR ID
 $idPropiedad = filter_var($_GET["id"], FILTER_VALIDATE_INT);
@@ -16,93 +17,36 @@ if (!$idPropiedad) {
 }
 
 //* OBTENER PROPIEDAD PARA ACTUALIZAR
-$queryObtenerPropiedad = "SELECT * FROM propiedades WHERE id = $idPropiedad";
-$resultadoPropiedad = mysqli_query($db, $queryObtenerPropiedad);
-$propiedad = mysqli_fetch_assoc($resultadoPropiedad);
+$propiedad = Propiedad::find($idPropiedad);
 
 //* CONSULTAR VENDEDORES
 $queryObtenerVendedores = "SELECT * FROM vendedores";
 $resultadoVendedores = mysqli_query($db, $queryObtenerVendedores);
 
-$nombre = $propiedad["nombre"];
-$precio = $propiedad["precio"];
-$descripcion = $propiedad["descripcion"];
-$habitaciones = $propiedad["habitaciones"];
-$wc = $propiedad["wc"];
-$estacionamiento = $propiedad["estacionamiento"];
-$vendedorId = $propiedad["vendedorId"];
-$imagenPropiedad = $propiedad["imagen"];
+$errores = Propiedad::getErrores();
 
-$errores = [];
 //* ENVIAR FORMULARIO
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-  //* SANITIZAR LOS DATOS CON MRES
-  $nombre = mysqli_real_escape_string($db, $_POST['nombre']);
-  $precio = mysqli_real_escape_string($db, $_POST['precio']);
-  $descripcion = mysqli_real_escape_string($db, $_POST['descripcion']);
-  $habitaciones = mysqli_real_escape_string($db, $_POST['habitaciones']);
-  $wc = mysqli_real_escape_string($db, $_POST['wc']);
-  $estacionamiento = mysqli_real_escape_string($db, $_POST['estacionamiento']);
-  $vendedorId = mysqli_real_escape_string($db, $_POST['vendedorId']);
-  $creado = date('Y/m/d');
-  $imagen = $_FILES["imagen"];
+  $propiedad->sincronizar($_POST);
+  $errores = $propiedad->validar();
 
-  //* VALIDAR FORMULARIO
-  if (!$nombre) {
-    array_push($errores, "Debes añadir un título");
-  }
+  //* GENERAR UN NOMBRE UNICO
+  $nombreImagen = md5(uniqid(rand(), true)) . ".jpg";
 
-  if (!$precio) {
-    array_push($errores, "Debes añadir un precio");
-  }
-
-  if (!$descripcion) {
-    array_push($errores, "Debes añadir una descripción");
-  }
-
-  if (!$habitaciones || !$wc || !$estacionamiento) {
-    array_push($errores, "Debes añadir los tres campos de habitaciones, wc y estacionamiento");
-  }
-
-  if (!$vendedorId) {
-    array_push($errores, "Selecciona un vendedor");
-  }
-
-  $medidaImagen = 2000 * 100;
-  if ($imagen["size"] > $medidaImagen) {
-    array_push($errores, "La imagen es muy pesada");
+  if ($_FILES['imagen']['tmp_name']) {
+    //* REALIZA UN RESIZE A LA IMAGEN CON INTERVENTION
+    $image = Image::make($_FILES['imagen']['tmp_name'])->fit(800, 600);
+    //* SETEAR LA IMAGEN
+    $propiedad->setImagen($nombreImagen);
   }
 
   if (empty($errores)) {
-    //* CREAR ARCHIVO DE IMAGENES 
-    $carpetaImagenes = '../../imagenes/';
-
-    if (!is_dir($carpetaImagenes)) {
-      mkdir($carpetaImagenes);
+    //* ALMACENAR IMAGEN
+    if (isset($image)) {
+      $image->save(__DIR__ . '/../../imagenes/' . $nombreImagen);
     }
 
-    $nombreImagen = '';
-
-    //* EVALUAR SI SE SUBIÓ NUEVA IMAGEN
-    if ($imagen['name']) {
-      //* ELIMINAR IMAGEN PREVIA
-      unlink($carpetaImagenes . $propiedad['imagen']);
-
-      //* GENERAR UN NOMBRE UNICO
-      $nombreImagen = md5(uniqid(rand(), true)) . ".jpg";
-  
-      //* SUBIR LA IMAGEN
-      move_uploaded_file($imagen["tmp_name"], $carpetaImagenes . $nombreImagen);
-    } else {
-      $nombreImagen = $propiedad['imagen'];
-    }
-
-
-    //* CREAR CONSULTA
-    $query = "UPDATE propiedades SET nombre='$nombre', precio='$precio', imagen='$nombreImagen', descripcion='$descripcion', habitaciones='$habitaciones', wc='$wc', estacionamiento='$estacionamiento', vendedorId='$vendedorId' WHERE id='$idPropiedad'";
-
-    //* GUARDAR EN BD
-    $resultado = mysqli_query($db, $query);
+    $resultado = $propiedad->guardar();
 
     if ($resultado) {
       //* REDIRECCIONAR 
@@ -132,31 +76,33 @@ incluirTemplate('header');
       <legend>Información General</legend>
 
       <label for="nombre">Título:</label>
-      <input type="text" id="nombre" name="nombre" placeholder="Ejm: Propiedad de Lujo" value="<?php echo $nombre ?>">
+      <input type="text" id="nombre" name="nombre" placeholder="Ejm: Propiedad de Lujo" value="<?php echo htmlspecialchars($propiedad->getNombre()) ?>">
 
       <label for="precio">Precio:</label>
-      <input type="number" id="precio" name="precio" placeholder="Ejm: 3.000.000" value=<?php echo $precio ?>>
+      <input type="number" id="precio" name="precio" placeholder="Ejm: 3.000.000" value=<?php echo htmlspecialchars($propiedad->getPrecio()); ?>>
 
       <label for="imagen">Imagen:</label>
       <input type="file" id="imagen" name="imagen" accept="image/jpeg, image/png">
 
-      <img class="imagen-small" src="/bienesraices/imagenes/<?php echo $imagenPropiedad ?>" alt="Imagen <?php echo $nombre ?>">
+      <?php if ($propiedad->getImagen()) { ?>
+        <img src="/bienesraices/imagenes/<?php echo $propiedad->getImagen() ?>" class="imagen-small" alt="Imagen <?php echo $propiedad->getNombre() ?>">
+      <?php } ?>
 
       <label for="descripcion">Descripcion:</label>
-      <textarea id="descripcion" name="descripcion"><?php echo $descripcion ?></textarea>
+      <textarea id="descripcion" name="descripcion"><?php echo htmlspecialchars($propiedad->getDescripcion()); ?></textarea>
     </fieldset>
 
     <fieldset>
       <legend>Información Propiedad</legend>
 
       <label for="habitaciones">Habitaciones:</label>
-      <input type="number" id="habitaciones" name="habitaciones" placeholder="Ej: 3" min="1" max="9" value=<?php echo $habitaciones ?>>
+      <input type="number" id="habitaciones" name="habitaciones" placeholder="Ej: 3" min="1" max="9" value=<?php echo htmlspecialchars($propiedad->getHabitaciones()); ?>>
 
       <label for="wc">Baños:</label>
-      <input type="number" id="wc" name="wc" placeholder="Ej: 3" min="1" max="9" value=<?php echo $wc ?>>
+      <input type="number" id="wc" name="wc" placeholder="Ej: 3" min="1" max="9" value=<?php echo htmlspecialchars($propiedad->getWc()); ?>>
 
       <label for="estacionamiento">Estacionamiento:</label>
-      <input type="number" id="estacionamiento" name="estacionamiento" placeholder="Ej: 3" min="1" max="9" value=<?php echo $estacionamiento ?>>
+      <input type="number" id="estacionamiento" name="estacionamiento" placeholder="Ej: 3" min="1" max="9" value=<?php echo htmlspecialchars($propiedad->getEstacionamiento()); ?>>
     </fieldset>
 
     <fieldset>
@@ -165,7 +111,7 @@ incluirTemplate('header');
       <select name="vendedorId">
         <option value="" disabled selected>--Seleccione--</option>
         <?php while ($vendedor = mysqli_fetch_assoc($resultadoVendedores)) { ?>
-          <option <?php echo $vendedor["id"] === $vendedorId ? 'selected' : '' ?> value=<?php echo $vendedor["id"] ?>><?php echo $vendedor["nombre"] . ' ' . $vendedor["apellido"] ?></option>
+          <option <?php echo $vendedor["id"] === htmlspecialchars($propiedad->getVendedorId()) ? 'selected' : '' ?> value=<?php echo $vendedor["id"] ?>><?php echo $vendedor["nombre"] . ' ' . $vendedor["apellido"] ?></option>
         <?php } ?>
       </select>
     </fieldset>

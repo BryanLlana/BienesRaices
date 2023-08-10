@@ -35,7 +35,15 @@ class Propiedad
     $this->vendedorId = $args['vendedorId'] ?? '';
   }
 
-  public function guardar()
+  public function guardar() {
+    if (isset($this->id)) {
+      return $this->actualizar();
+    } else {
+      return $this->crear();
+    }
+  }
+
+  public function crear()
   {
     //* SANITIZAR DATOS
     $atributos = $this->sanitizarAtributos();
@@ -44,6 +52,20 @@ class Propiedad
 
     //* INSERTAR EN BD
     $query = "INSERT INTO propiedades ($campos) VALUES ('$valores')";
+    $resultado = self::$db->query($query);
+    return $resultado;
+  }
+
+  public function actualizar() {
+    //* SANITIZAR DATOS
+    $atributos = $this->sanitizarAtributos();
+    $valores = [];
+    foreach($atributos as $key => $value) {
+      $valores[] = "$key='$value'";
+    }
+    
+    $camposValores = join(', ', $valores);
+    $query = "UPDATE propiedades SET $camposValores WHERE id='".self::$db->escape_string($this->id)."'";
     $resultado = self::$db->query($query);
     return $resultado;
   }
@@ -74,7 +96,16 @@ class Propiedad
   }
 
   //* SUBIDA DE ARCHIVOS
-  public function setImagen($imagen) {
+  public function setImagen($imagen)
+  {
+    //* ELIMINAR LA IMAGEN PREVIA
+    if (isset($this->id)) {
+      $existeArchivo = file_exists(__DIR__.'/../imagenes/'.$this->imagen);
+      if ($existeArchivo) {
+        unlink(__DIR__.'/../imagenes/'.$this->imagen);
+      }
+    }
+    
     if ($imagen) {
       $this->imagen = $imagen;
     }
@@ -85,7 +116,8 @@ class Propiedad
     return self::$errores;
   }
 
-  public function validar(){
+  public function validar()
+  {
     //* VALIDAR FORMULARIO
     if (!$this->nombre) {
       array_push(self::$errores, "Debes añadir un título");
@@ -115,20 +147,29 @@ class Propiedad
   }
 
   //* LISTAR PROPIEDADES
-  public static function all() {
+  public static function all()
+  {
     $query = "SELECT * FROM propiedades";
     $resultado = self::consultarSQL($query);
 
     return $resultado;
   }
 
-  public static function consultarSQL($query) {
+  public static function find($id)
+  {
+    $query = "SELECT * FROM propiedades WHERE id = $id";
+    $resultado = self::consultarSQL($query);
+    return array_shift($resultado); 
+  }
+
+  public static function consultarSQL($query)
+  {
     //* CONSULTAR LA BD
     $resultado = self::$db->query($query);
 
     //* ITERAR LOS RESULTADOS
     $array = [];
-    while($registro=$resultado->fetch_assoc()) {
+    while ($registro = $resultado->fetch_assoc()) {
       $array[] = self::crearObjeto($registro);
     }
 
@@ -138,7 +179,8 @@ class Propiedad
     return $array;
   }
 
-  private static function crearObjeto($registro) {
+  private static function crearObjeto($registro)
+  {
     $objeto = new self;
 
     foreach ($registro as $key => $value) {
@@ -150,6 +192,14 @@ class Propiedad
     return $objeto;
   }
 
+  public function sincronizar($args = []) {
+    foreach($args as $key => $value) {
+      if (property_exists($this, $key) && !is_null($value)) {
+        $this->$key = $value;
+      }
+    }
+  }
+
   //* DEFINIR LA CONEXION BD
   public static function setDB($database)
   {
@@ -157,39 +207,48 @@ class Propiedad
   }
 
   //* GETTER AND SETTER
-  public function getNombre() {
+  public function getNombre()
+  {
     return $this->nombre;
   }
 
-  public function getPrecio() {
+  public function getPrecio()
+  {
     return $this->precio;
   }
 
-  public function getDescripcion() {
+  public function getDescripcion()
+  {
     return $this->descripcion;
   }
 
-  public function getImagen() {
+  public function getImagen()
+  {
     return $this->imagen;
   }
 
-  public function getHabitaciones() {
+  public function getHabitaciones()
+  {
     return $this->habitaciones;
   }
 
-  public function getWc() {
+  public function getWc()
+  {
     return $this->wc;
   }
 
-  public function getEstacionamiento() {
+  public function getEstacionamiento()
+  {
     return $this->estacionamiento;
   }
 
-  public function getVendedorId() {
+  public function getVendedorId()
+  {
     return $this->vendedorId;
   }
-  
-  public function getId() {
+
+  public function getId()
+  {
     return $this->id;
   }
 }

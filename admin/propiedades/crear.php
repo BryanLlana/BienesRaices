@@ -15,28 +15,12 @@ $db = conectarDB();
 $queryObtenerVendedores = "SELECT * FROM vendedores";
 $resultadoVendedores = mysqli_query($db, $queryObtenerVendedores);
 
-$nombre = "";
-$precio = "";
-$descripcion = "";
-$habitaciones = "";
-$wc = "";
-$estacionamiento = "";
-$vendedorId = "";
-
+$propiedad = new Propiedad();
 $errores = Propiedad::getErrores();
 
 //* ENVIAR FORMULARIO
 if ($_SERVER['REQUEST_METHOD'] == 'POST') {
   $propiedad = new Propiedad($_POST);
-
-  //* ESCAPAR Y SANITIZAR HTML
-  $nombre = htmlspecialchars($propiedad->getNombre());
-  $precio = htmlspecialchars($propiedad->getPrecio());
-  $descripcion = htmlspecialchars($propiedad->getDescripcion());
-  $habitaciones = htmlspecialchars($propiedad->getHabitaciones());
-  $wc = htmlspecialchars($propiedad->getWc());
-  $estacionamiento = htmlspecialchars($propiedad->getEstacionamiento());
-  $vendedorId = htmlspecialchars($propiedad->getVendedorId());
 
   //* GENERAR UN NOMBRE UNICO
   $nombreImagen = md5(uniqid(rand(), true)) . ".jpg";
@@ -92,29 +76,29 @@ incluirTemplate('header');
         <legend>Información General</legend>
 
         <label for="nombre">Título:</label>
-        <input type="text" id="nombre" name="nombre" placeholder="Ejm: Propiedad de Lujo" value="<?php echo $nombre ?>">
+        <input type="text" id="nombre" name="nombre" placeholder="Ejm: Propiedad de Lujo" value="<?php echo htmlspecialchars($propiedad->getNombre()) ?>">
 
         <label for="precio">Precio:</label>
-        <input type="number" id="precio" name="precio" placeholder="Ejm: 3.000.000" value=<?php echo $precio ?>>
+        <input type="number" id="precio" name="precio" placeholder="Ejm: 3.000.000" value=<?php echo htmlspecialchars($propiedad->getPrecio()); ?>>
 
         <label for="imagen">Imagen:</label>
         <input type="file" id="imagen" name="imagen" accept="image/jpeg, image/png">
 
         <label for="descripcion">Descripcion:</label>
-        <textarea id="descripcion" name="descripcion"><?php echo $descripcion ?></textarea>
+        <textarea id="descripcion" name="descripcion"><?php echo htmlspecialchars($propiedad->getDescripcion()); ?></textarea>
       </fieldset>
 
       <fieldset>
         <legend>Información Propiedad</legend>
 
         <label for="habitaciones">Habitaciones:</label>
-        <input type="number" id="habitaciones" name="habitaciones" placeholder="Ej: 3" min="1" max="9" value=<?php echo $habitaciones ?>>
+        <input type="number" id="habitaciones" name="habitaciones" placeholder="Ej: 3" min="1" max="9" value=<?php echo htmlspecialchars($propiedad->getHabitaciones()); ?>>
 
         <label for="wc">Baños:</label>
-        <input type="number" id="wc" name="wc" placeholder="Ej: 3" min="1" max="9" value=<?php echo $wc ?>>
+        <input type="number" id="wc" name="wc" placeholder="Ej: 3" min="1" max="9" value=<?php echo htmlspecialchars($propiedad->getWc()); ?>>
 
         <label for="estacionamiento">Estacionamiento:</label>
-        <input type="number" id="estacionamiento" name="estacionamiento" placeholder="Ej: 3" min="1" max="9" value=<?php echo $estacionamiento ?>>
+        <input type="number" id="estacionamiento" name="estacionamiento" placeholder="Ej: 3" min="1" max="9" value=<?php echo htmlspecialchars($propiedad->getEstacionamiento()); ?>>
       </fieldset>
 
       <fieldset>
@@ -123,7 +107,7 @@ incluirTemplate('header');
         <select name="vendedorId">
           <option value="" disabled selected>--Seleccione--</option>
           <?php while ($vendedor = mysqli_fetch_assoc($resultadoVendedores)) { ?>
-            <option <?php echo $vendedor["id"] === $vendedorId ? 'selected' : '' ?> value=<?php echo $vendedor["id"] ?>><?php echo $vendedor["nombre"] . ' ' . $vendedor["apellido"] ?></option>
+            <option <?php echo $vendedor["id"] === htmlspecialchars($propiedad->getVendedorId()) ? 'selected' : '' ?> value=<?php echo $vendedor["id"] ?>><?php echo $vendedor["nombre"] . ' ' . $vendedor["apellido"] ?></option>
           <?php } ?>
         </select>
       </fieldset>

@@ -2,25 +2,21 @@
 
 namespace App;
 
-class Propiedad
+class Propiedad extends ActiveRecord
 {
-  //* BASE DE DATOS
-  private static $db;
-  private static $columnasDB = ['id', 'nombre', 'precio', 'imagen', 'descripcion', 'habitaciones', 'wc', 'estacionamiento', 'creado', 'vendedorId'];
+  protected static $tabla = 'propiedades';
+  protected static $columnasDB = ['id', 'nombre', 'precio', 'imagen', 'descripcion', 'habitaciones', 'wc', 'estacionamiento', 'creado', 'vendedorId'];
 
-  //* ERRORES
-  private static $errores = [];
-
-  private $id;
-  private $nombre;
-  private $precio;
-  private $imagen;
-  private $descripcion;
-  private $habitaciones;
-  private $wc;
-  private $estacionamiento;
-  private $creado;
-  private $vendedorId;
+  protected $id;
+  protected $nombre;
+  protected $precio;
+  protected $imagen;
+  protected $descripcion;
+  protected $habitaciones;
+  protected $wc;
+  protected $estacionamiento;
+  protected $creado;
+  protected $vendedorId;
 
   public function __construct($args = [])
   {
@@ -33,107 +29,6 @@ class Propiedad
     $this->estacionamiento = $args['estacionamiento'] ?? '';
     $this->creado = date('Y/m/d');
     $this->vendedorId = $args['vendedorId'] ?? '';
-  }
-
-  public function guardar()
-  {
-    if (isset($this->id)) {
-      return $this->actualizar();
-    } else {
-      return $this->crear();
-    }
-  }
-
-  public function crear()
-  {
-    //* SANITIZAR DATOS
-    $atributos = $this->sanitizarAtributos();
-    $campos = join(', ', array_keys($atributos));
-    $valores = join("', '", array_values($atributos));
-
-    //* INSERTAR EN BD
-    $query = "INSERT INTO propiedades ($campos) VALUES ('$valores')";
-    $resultado = self::$db->query($query);
-    return $resultado;
-  }
-
-  public function actualizar()
-  {
-    //* SANITIZAR DATOS
-    $atributos = $this->sanitizarAtributos();
-    $valores = [];
-    foreach ($atributos as $key => $value) {
-      $valores[] = "$key='$value'";
-    }
-
-    $camposValores = join(', ', $valores);
-    $query = "UPDATE propiedades SET $camposValores WHERE id='" . self::$db->escape_string($this->id) . "'";
-    $resultado = self::$db->query($query);
-    return $resultado;
-  }
-
-  public function eliminar()
-  {
-    $query = "DELETE FROM propiedades WHERE id ='" . self::$db->escape_string($this->id) . "'";
-    $resultado = self::$db->query($query);
-
-    if ($resultado) {
-      $this->borrarImagen();
-    }
-
-    return $resultado;
-  }
-
-  public function atributos()
-  {
-    $atributos = [];
-    foreach (self::$columnasDB as $columna) {
-      if ($columna === 'id') {
-        continue;
-      }
-      $atributos[$columna] = $this->$columna;
-    }
-
-    return $atributos;
-  }
-
-  public function sanitizarAtributos()
-  {
-    $atributos = $this->atributos();
-    $sanitizados = [];
-
-    foreach ($atributos as $key => $value) {
-      $sanitizados[$key] = self::$db->escape_string($value);
-    }
-
-    return $sanitizados;
-  }
-
-  //* SUBIDA DE ARCHIVOS
-  public function setImagen($imagen)
-  {
-    //* ELIMINAR LA IMAGEN PREVIA
-    if (isset($this->id)) {
-      $this->borrarImagen();
-    }
-
-    if ($imagen) {
-      $this->imagen = $imagen;
-    }
-  }
-
-  public function borrarImagen()
-  {
-    //* ELIMINAR LA IMAGEN PREVIA
-    $existeArchivo = file_exists(__DIR__ . '/../imagenes/' . $this->imagen);
-    if ($existeArchivo) {
-      unlink(__DIR__ . '/../imagenes/' . $this->imagen);
-    }
-  }
-
-  public static function getErrores()
-  {
-    return self::$errores;
   }
 
   public function validar()
@@ -164,67 +59,6 @@ class Propiedad
     }
 
     return self::$errores;
-  }
-
-  //* LISTAR PROPIEDADES
-  public static function all()
-  {
-    $query = "SELECT * FROM propiedades";
-    $resultado = self::consultarSQL($query);
-
-    return $resultado;
-  }
-
-  public static function find($id)
-  {
-    $query = "SELECT * FROM propiedades WHERE id = $id";
-    $resultado = self::consultarSQL($query);
-    return array_shift($resultado);
-  }
-
-  public static function consultarSQL($query)
-  {
-    //* CONSULTAR LA BD
-    $resultado = self::$db->query($query);
-
-    //* ITERAR LOS RESULTADOS
-    $array = [];
-    while ($registro = $resultado->fetch_assoc()) {
-      $array[] = self::crearObjeto($registro);
-    }
-
-    //* LIBERAR LA MEMORIA
-    $resultado->free();
-
-    return $array;
-  }
-
-  private static function crearObjeto($registro)
-  {
-    $objeto = new self;
-
-    foreach ($registro as $key => $value) {
-      if (property_exists($objeto, $key)) {
-        $objeto->$key = $value;
-      }
-    }
-
-    return $objeto;
-  }
-
-  public function sincronizar($args = [])
-  {
-    foreach ($args as $key => $value) {
-      if (property_exists($this, $key) && !is_null($value)) {
-        $this->$key = $value;
-      }
-    }
-  }
-
-  //* DEFINIR LA CONEXION BD
-  public static function setDB($database)
-  {
-    self::$db = $database;
   }
 
   //* GETTER AND SETTER

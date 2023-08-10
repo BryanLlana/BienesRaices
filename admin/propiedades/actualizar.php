@@ -2,6 +2,7 @@
 require '../../includes/app.php';
 
 use App\Propiedad;
+use App\Vendedor;
 use Intervention\Image\ImageManagerStatic as Image;
 
 //* VERIFICAR AUTENTICACION
@@ -20,8 +21,7 @@ if (!$idPropiedad) {
 $propiedad = Propiedad::find($idPropiedad);
 
 //* CONSULTAR VENDEDORES
-$queryObtenerVendedores = "SELECT * FROM vendedores";
-$resultadoVendedores = mysqli_query($db, $queryObtenerVendedores);
+$vendedores = Vendedor::all();
 
 $errores = Propiedad::getErrores();
 
@@ -110,8 +110,8 @@ incluirTemplate('header');
 
       <select name="vendedorId">
         <option value="" disabled selected>--Seleccione--</option>
-        <?php while ($vendedor = mysqli_fetch_assoc($resultadoVendedores)) { ?>
-          <option <?php echo $vendedor["id"] === htmlspecialchars($propiedad->getVendedorId()) ? 'selected' : '' ?> value=<?php echo $vendedor["id"] ?>><?php echo $vendedor["nombre"] . ' ' . $vendedor["apellido"] ?></option>
+        <?php foreach ($vendedores as $vendedor) { ?>
+          <option <?php echo $vendedor->getId() === htmlspecialchars($propiedad->getVendedorId()) ? 'selected' : '' ?> value=<?php echo $vendedor->getId() ?>><?php echo $vendedor->getNombre() . ' ' . $vendedor->getApellido() ?></option>
         <?php } ?>
       </select>
     </fieldset>

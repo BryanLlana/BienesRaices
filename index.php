@@ -1,12 +1,13 @@
-<?php 
+<?php
+
+use App\Propiedad;
+
   require './includes/app.php';
 
   //* BASE DE DATOS
   $db = conectarDB();
 
-  $limite = 3;
-  $queryObtenerPropiedades = "SELECT * FROM propiedades LIMIT $limite";
-  $resultadoPropiedades = mysqli_query($db, $queryObtenerPropiedades);
+  $propiedades = Propiedad::get(3);
 
   //* IMPLEMENTAR PLANTILLA
   $inicio = true;
@@ -39,30 +40,30 @@
     <h2>Casas y Depas en Venta</h2>
 
     <div class="contenedor-anuncios">
-      <?php while($propiedad = mysqli_fetch_assoc($resultadoPropiedades)) { ?>
+      <?php foreach ($propiedades as $propiedad) { ?>
         <div class="anuncio">
-          <img src="/bienesraices/imagenes/<?php echo $propiedad['imagen'] ?>" alt="Imagen <?php echo $propiedad['nombre'] ?>" loading="lazy">
+          <img src="/bienesraices/imagenes/<?php echo $propiedad->getImagen() ?>" alt="Imagen <?php echo $propiedad->getNombre() ?>" loading="lazy">
           <div class="contenido-anuncio">
-            <h3><?php echo $propiedad['nombre'] ?></h3>
-            <p><?php echo $propiedad['descripcion'] ?></p>
-            <p class="precio">$<?php echo $propiedad['precio'] ?></p>
+            <h3><?php echo $propiedad->getNombre() ?></h3>
+            <p><?php echo $propiedad->getDescripcion() ?></p>
+            <p class="precio">$<?php echo $propiedad->getPrecio() ?></p>
   
             <ul class="iconos-caracteristicas">
               <li>
                 <img src="./build/img/icono_wc.svg" alt="Icono WC" loading="lazy">
-                <p><?php echo $propiedad['wc'] ?></p>
+                <p><?php echo $propiedad->getWc() ?></p>
               </li>
               <li>
                 <img src="./build/img/icono_estacionamiento.svg" alt="Icono Estacionamiento" loading="lazy">
-                <p><?php echo $propiedad['estacionamiento'] ?></p>
+                <p><?php echo $propiedad->getEstacionamiento() ?></p>
               </li>
               <li>
                 <img src="./build/img/icono_dormitorio.svg" alt="Icono Habitaciones" loading="lazy">
-                <p><?php echo $propiedad['habitaciones'] ?></p>
+                <p><?php echo $propiedad->getHabitaciones() ?></p>
               </li>
             </ul>
   
-            <a href="./anuncio.php?id=<?php echo $propiedad['id'] ?>" class="btn-amarillo-block">Ver Propiedad</a>
+            <a href="./anuncio.php?id=<?php echo $propiedad->getId() ?>" class="btn-amarillo-block">Ver Propiedad</a>
           </div>
         </div>
       <?php } ?>
